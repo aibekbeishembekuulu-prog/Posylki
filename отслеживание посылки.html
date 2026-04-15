@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tez Kargo — Мобильное отслеживание</title>
+
+<style>
+body { font-family: Arial; background: #f2f5fb; margin: 0; padding: 0; }
+.container { max-width: 500px; margin: auto; padding: 20px; }
+
+.top-img {
+    width: 100%;
+    border-radius: 15px;
+    margin-bottom: 10px;
+}
+
+.box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; margin-top: 20px; }
+.logo { max-width: 180px; margin-bottom: 15px; }
+
+h2 { color: #2b6cff; margin-bottom: 15px; }
+
+input, textarea, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+textarea { resize: none; height: 70px; }
+
+button {
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+    border-radius: 10px;
+}
+
+.button-red { background-color: #d9534f; color: white; }
+
+.card {
+    background: linear-gradient(135deg, #4a90e2, #50e3c2);
+    margin-top: 15px;
+    padding: 20px;
+    border-radius: 20px;
+    color: white;
+    text-align: left;
+}
+
+.track { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+.status { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+.date { font-size: 14px; }
+
+.message {
+    background: #dff0d8;
+    color: #3c763d;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="jpg.jpg" class="top-img">
+
+<div class="box">
+
+<img src="logo.jpg.jpg" alt="Tez Kargo" class="logo">
+<h2>📦 Tez Kargo — Отслеживание посылок</h2>
+
+<input id="client" placeholder="Введите клиентский код">
+<textarea id="tracks" placeholder="Введите трек-коды через запятую"></textarea>
+
+<button class="button-red" onclick="add()">➕ Добавить посылки</button>
+<button class="button-red" onclick="search()">🔍 Показать мои посылки</button>
+
+<div id="result"></div>
+</div>
+</div>
+
+<script>
+const url = "https://script.google.com/macros/s/AKfycbyWxhTjr99IKcHubVsLSlRYIy8EGNvS4TMpn4meNCS1oeaxzzYi1Csyo3Mli8fwwawO/exec";
+
+// формат только для date (если нужно)
+function formatDate(d){
+    if(!d) return "-";
+    const date = new Date(d);
+    return String(date.getDate()).padStart(2,'0') + "." +
+           String(date.getMonth()+1).padStart(2,'0') + "." +
+           date.getFullYear();
+}
+
+async function add(){
+    const client_code = document.getElementById("client").value.trim();
+    const tracks = document.getElementById("tracks").value.trim();
+
+    if(!client_code || !tracks){
+        alert("Введите клиентский код и трек-коды!");
+        return;
+    }
+
+    await fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ action: "add", client_code, tracks })
+    });
+
+    alert("✅ Посылки добавлены!");
+    document.getElementById("tracks").value = "";
+}
+
+async function search(){
+    const client_code = document.getElementById("client").value.trim();
+
+    if(!client_code){
+        alert("Введите клиентский код!");
+        return;
+    }
+
+    const res = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ action: "search", client_code })
+    });
+
+    const data = await res.json();
+
+    let html = "";
+
+    if(!data || data.length === 0){
+        html = "<p>❌ Посылок не найдено</p>";
+    } else {
+
+        html += `<div class="message">✅ Найдены посылки по клиентскому коду: ${client_code}</div>`;
+
+        data.forEach(p=>{
+
+            let statusEmoji = "⚠️ Неизвестно";
+            const status = (p.status || "").toLowerCase();
+
+            if(status.includes("в пути") || status.includes("китай")){
+                statusEmoji = "📍 В пути";
+            }
+            else if(status.includes("выдано")){
+                statusEmoji = "✅ Выдано";
+            }
+            else if(status.includes("офис")){
+                statusEmoji = "🏢 В офисе";
+            }
+
+            // ✅ ИСПРАВЛЕНО
+            const sendDate = p.date || "-";
+            const expectedDate = p.expected_date || "-";
+
+            html += `
+            <div class="card">
+                <div class="track">🆔 Трек-код: ${p.track}</div>
+                <div class="status">Статус: ${statusEmoji}</div>
+                <div class="date">📬 Дата отправки: ${sendDate}</div>
+                <div class="date">📦 Ожидаемое поступление: ${expectedDate}</div>
+            </div>`;
+        });
+    }
+
+    document.getElementById("result").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
