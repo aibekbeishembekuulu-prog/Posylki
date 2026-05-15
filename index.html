@@ -1,24 +1,21 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tez Kargo — Мобильное отслеживание</title>
+<title>Tez Kargo — Отслеживание</title>
 
 <style>
 body { font-family: Arial; background: #f2f5fb; margin: 0; padding: 0; }
 .container { max-width: 500px; margin: auto; padding: 20px; }
 
-.top-img {
-    width: 100%;
-    border-radius: 15px;
-    margin-bottom: 10px;
-}
+.top-img { width: 100%; border-radius: 15px; margin-bottom: 10px; }
 
-.box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; margin-top: 20px; }
+.box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; }
+
 .logo { max-width: 180px; margin-bottom: 15px; }
 
-h2 { color: #2b6cff; margin-bottom: 15px; }
+h2 { color: #2b6cff; }
 
 input, textarea, button {
     width: 100%;
@@ -30,14 +27,12 @@ input, textarea, button {
     box-sizing: border-box;
 }
 
-textarea { resize: none; height: 70px; }
+textarea { height: 70px; resize: none; }
 
 button {
     font-weight: bold;
-    font-size: 16px;
     border: none;
     cursor: pointer;
-    margin-top: 10px;
     border-radius: 10px;
 }
 
@@ -59,7 +54,7 @@ button {
 .message {
     background: #dff0d8;
     color: #3c763d;
-    padding: 12px 15px;
+    padding: 12px;
     border-radius: 10px;
     margin-bottom: 10px;
     font-weight: bold;
@@ -75,16 +70,14 @@ button {
 
 <div class="box">
 
-<img src="logo.jpg.jpg" alt="Tez Kargo" class="logo">
-<h2>📦 Tez Kargo — Отслеживание посылок</h2>
+<img src="logo.jpg.jpg" class="logo">
+<h2>📦 Tez Kargo — Отслеживание</h2>
 
 <input id="client" placeholder="Введите клиентский код">
 <textarea id="tracks" placeholder="Введите трек-коды через запятую"></textarea>
 
 <button class="button-red" onclick="add()">➕ Добавить посылки</button>
 <button class="button-red" onclick="search()">🔍 Показать мои посылки</button>
-
-<!-- ✅ НОВАЯ КНОПКА -->
 <button class="button-red" onclick="departed()">🚚 Выехавшие грузы</button>
 
 <div id="result"></div>
@@ -94,15 +87,15 @@ button {
 </div>
 
 <script>
-const url = "https://script.google.com/macros/s/AKfycbznXc00YQX0Qm6mk5ZQumWFC6daAEwhRutLvmXd5CMPS0ysi7dAK4sTgPzXQwSetVyr0A/exec";
+const url = "https://script.google.com/macros/s/AKfycby78z_weUaCDyx66Tg-G8yK8kThx1jYc8HDQKkadr6XYGK-8XYwf7ADJY-CmpD4x7iZtQ/exec";
 
-// ADD
+// ================= ADD =================
 async function add(){
     const client_code = document.getElementById("client").value.trim();
     const tracks = document.getElementById("tracks").value.trim();
 
     if(!client_code || !tracks){
-        alert("Введите клиентский код и трек-коды!");
+        alert("Введите данные!");
         return;
     }
 
@@ -111,12 +104,13 @@ async function add(){
         body: JSON.stringify({ action: "add", client_code, tracks })
     });
 
-    alert("✅ Посылки добавлены!");
+    alert("✅ Добавлено!");
     document.getElementById("tracks").value = "";
 }
 
-// SEARCH
+// ================= SEARCH =================
 async function search(){
+
     const client_code = document.getElementById("client").value.trim();
 
     if(!client_code){
@@ -137,32 +131,23 @@ async function search(){
         html = "<p>❌ Посылок не найдено</p>";
     } else {
 
-        html += `<div class="message">✅ Найдены посылки по клиентскому коду: ${client_code}</div>`;
+        html += `<div class="message">✅ Посылки клиента: ${client_code}</div>`;
 
-        data.forEach(p=>{
+        data.forEach(p => {
 
-            let statusEmoji = "⚠️ Неизвестно";
             const status = (p.status || "").toLowerCase();
 
-            if(status.includes("в пути") || status.includes("китай")){
-                statusEmoji = "📍 В пути";
-            }
-            else if(status.includes("выдано")){
-                statusEmoji = "✅ Выдано";
-            }
-            else if(status.includes("офис")){
-                statusEmoji = "🏢 В офисе";
-            }
-
-            const sendDate = p.date || "-";
-            const expectedDate = p.expected_date || "-";
+            let statusEmoji = "⚠️ Неизвестно";
+            if(status.includes("в пути")) statusEmoji = "📍 В пути";
+            if(status.includes("выдано")) statusEmoji = "✅ Выдано";
+            if(status.includes("офис")) statusEmoji = "🏢 В офисе";
 
             html += `
             <div class="card">
-                <div class="track">🆔 Трек-код: ${p.track}</div>
+                <div class="track">🆔 Трек-код: ${p.track_code || "-"}</div>
                 <div class="status">Статус: ${statusEmoji}</div>
-                <div class="date">📬 Дата отправки: ${sendDate}</div>
-                <div class="date">📦 Ожидаемое поступление: ${expectedDate}</div>
+                <div class="date">📬 Дата: ${p.date || "-"}</div>
+                <div class="date">📦 Ожидание: ${p.expected_date || "-"}</div>
             </div>`;
         });
     }
@@ -170,7 +155,7 @@ async function search(){
     document.getElementById("result").innerHTML = html;
 }
 
-// 🚚 NEW: VYEHAVSHIE GRUZY
+// ================= DEPARTED =================
 async function departed(){
 
     const res = await fetch(url, {
@@ -188,14 +173,14 @@ async function departed(){
 
         html += `<div class="message">🚚 Выехавшие грузы</div>`;
 
-        data.forEach(p=>{
+        data.forEach(p => {
 
             html += `
             <div class="card">
-                <div class="track">🆔 Номер груза: ${p.track}</div>
-                <div class="status">📌 Статус: ${p.status}</div>
-                <div class="date">📅 Дата выезда: ${p.date}</div>
-                <div class="date">📦 Ожидаемое поступление: ${p.expected_date}</div>
+                <div class="track">🆔 Груз: ${p.tracking_number || "-"}</div>
+                <div class="status">📌 Статус: ${p.status || "-"}</div>
+                <div class="date">📅 Дата выезда: ${p.departure_date || "-"}</div>
+                <div class="date">📦 Ожидание: ${p.expected_arrival || "-"}</div>
             </div>`;
         });
     }
@@ -205,4 +190,4 @@ async function departed(){
 </script>
 
 </body>
-</html>
+</html>﻿
