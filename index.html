@@ -59,9 +59,6 @@ button {
     font-weight: bold;
     border: none;
     cursor: pointer;
-}
-
-.button-red {
     background-color: #d9534f;
     color: white;
 }
@@ -116,7 +113,7 @@ button {
 
 <input id="client" placeholder="Введите клиентский код">
 
-<button class="button-red" onclick="search()">
+<button onclick="search()">
 🔍 Показать мои посылки
 </button>
 
@@ -129,6 +126,35 @@ button {
 
 const url = "https://script.google.com/macros/s/AKfycbyWxhTjr99IKcHubVsLSlRYIy8EGNvS4TMpn4meNCS1oeaxzzYi1Csyo3Mli8fwwawO/exec";
 
+// 🔥 универсальная функция поиска значений
+function getValue(obj, keys, fallback = "-") {
+    for (let k of keys) {
+        if (obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
+            return obj[k];
+        }
+    }
+    return fallback;
+}
+
+// 🔥 формат даты ДД-ММ-ГГГГ
+function formatDateDMY(dateStr) {
+    if (!dateStr) return "-";
+
+    if (dateStr.includes("-") && dateStr.split("-")[0].length === 2) {
+        return dateStr;
+    }
+
+    let parts = dateStr.includes(".") ? dateStr.split(".") : dateStr.split("-");
+
+    if (parts.length !== 3) return dateStr;
+
+    let year = parts[0];
+    let month = parts[1];
+    let day = parts[2];
+
+    return `${day}-${month}-${year}`;
+}
+
 async function search(){
 
     const client_code = document.getElementById("client").value.trim();
@@ -140,6 +166,7 @@ async function search(){
 
     const res = await fetch(url, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             action: "search",
             client_code
@@ -151,9 +178,7 @@ async function search(){
     let html = "";
 
     if(!data || data.length === 0){
-
         html = "<p>❌ Посылок не найдено</p>";
-
     } else {
 
         html += `
@@ -163,43 +188,33 @@ async function search(){
 
         data.forEach(p => {
 
-            let statusEmoji = "⚠️ Неизвестно";
-            const status = (p.status || "").toLowerCase();
+            const statusRaw = (p.status || "").toLowerCase();
 
-            // 🇨🇳 На складе Китай
-            if(
-                status.includes("склад китай") ||
-                status.includes("на складе китай")
-            ){
+            let statusEmoji = "⚠️ Неизвестно";
+
+            if(statusRaw.includes("склад") && statusRaw.includes("китай")){
                 statusEmoji = "🇨🇳 На складе в Китае";
             }
-
-            // 🚚 В пути
-            else if(
-                status.includes("в пути") ||
-                status.includes("китай")
-            ){
-                statusEmoji = "📍 В пути";
+            else if(statusRaw.includes("в пути")){
+                statusEmoji = "🚚 В пути";
             }
-
-            // ✅ Выдано
-            else if(status.includes("выдано")){
+            else if(statusRaw.includes("офис")){
+                statusEmoji = "🏢 В офисе";
+            }
+            else if(statusRaw.includes("выдано")){
                 statusEmoji = "✅ Выдано";
             }
 
-            // 🏢 В офисе
-            else if(status.includes("офис")){
-                statusEmoji = "🏢 В офисе";
-            }
+            const sendDate = getValue(p, ["date", "Date", "send_date", "sendDate"]);
 
-            const sendDate = p.date || "-";
-            const expectedDate = p.expected_date || "-";
+            const expectedDateRaw = getValue(p, ["expected_date", "expectedDate", "EXPECTED_DATE", "planned_date"]);
+            const expectedDate = formatDateDMY(expectedDateRaw);
 
             html += `
             <div class="card">
 
                 <div class="track">
-                    🆔 Трек-код: ${p.track}
+                    🆔 Трек-код: ${p.track || "-"}
                 </div>
 
                 <div class="status">
