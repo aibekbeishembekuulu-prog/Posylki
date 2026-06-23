@@ -136,23 +136,24 @@ function getValue(obj, keys, fallback = "-") {
     return fallback;
 }
 
-// 🔥 формат даты ДД-ММ-ГГГГ
-function formatDateDMY(dateStr) {
+// 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ ДАТЫ (DD.MM.YYYY)
+function formatDate(dateStr) {
     if (!dateStr) return "-";
 
-    if (dateStr.includes("-") && dateStr.split("-")[0].length === 2) {
-        return dateStr;
+    // если приходит ISO или с точками
+    if (typeof dateStr === "string") {
+        dateStr = dateStr.replace(/\./g, "-");
     }
 
-    let parts = dateStr.includes(".") ? dateStr.split(".") : dateStr.split("-");
+    const date = new Date(dateStr);
 
-    if (parts.length !== 3) return dateStr;
+    if (isNaN(date.getTime())) return dateStr;
 
-    let year = parts[0];
-    let month = parts[1];
-    let day = parts[2];
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
 
-    return `${day}-${month}-${year}`;
+    return `${day}.${month}.${year}`;
 }
 
 async function search(){
@@ -205,10 +206,14 @@ async function search(){
                 statusEmoji = "✅ Выдано";
             }
 
-            const sendDate = getValue(p, ["date", "Date", "send_date", "sendDate"]);
+            const sendDate = formatDate(getValue(p, ["date", "Date", "send_date", "sendDate"]));
 
-            const expectedDateRaw = getValue(p, ["expected_date", "expectedDate", "EXPECTED_DATE", "planned_date"]);
-            const expectedDate = formatDateDMY(expectedDateRaw);
+            const expectedDate = formatDate(getValue(p, [
+                "expected_date",
+                "expectedDate",
+                "EXPECTED_DATE",
+                "planned_date"
+            ]));
 
             html += `
             <div class="card">
