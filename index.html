@@ -107,7 +107,7 @@ button {
 
 <div class="box">
 
-<img src="logo.jpg.jpg" alt="Tez Kargo" class="logo">
+<img src="logo.jpg.jpg" class="logo">
 
 <h2>📦 Tez Kargo — Отслеживание посылок</h2>
 
@@ -126,32 +126,16 @@ button {
 
 const url = "https://script.google.com/macros/s/AKfycbyWxhTjr99IKcHubVsLSlRYIy8EGNvS4TMpn4meNCS1oeaxzzYi1Csyo3Mli8fwwawO/exec";
 
-// 🔥 универсальная функция поиска значений
-function getValue(obj, keys, fallback = "-") {
-    for (let k of keys) {
-        if (obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") {
-            return obj[k];
-        }
-    }
-    return fallback;
-}
+// 📅 формат даты YYYY-MM-DD → DD.MM.YYYY
+function formatDate(dateStr){
+    if(!dateStr || dateStr === "-") return "-";
 
-// 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ ДАТЫ (DD.MM.YYYY)
-function formatDate(dateStr) {
-    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if(isNaN(d)) return dateStr;
 
-    // если приходит ISO или с точками
-    if (typeof dateStr === "string") {
-        dateStr = dateStr.replace(/\./g, "-");
-    }
-
-    const date = new Date(dateStr);
-
-    if (isNaN(date.getTime())) return dateStr;
-
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
+    const day = String(d.getDate()).padStart(2,'0');
+    const month = String(d.getMonth()+1).padStart(2,'0');
+    const year = d.getFullYear();
 
     return `${day}.${month}.${year}`;
 }
@@ -167,7 +151,6 @@ async function search(){
 
     const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             action: "search",
             client_code
@@ -193,27 +176,28 @@ async function search(){
 
             let statusEmoji = "⚠️ Неизвестно";
 
-            if(statusRaw.includes("склад") && statusRaw.includes("китай")){
+            // 🇨🇳 Китай (ВАЖНО: ставим первым)
+            if(statusRaw.includes("склад китай") || statusRaw.includes("китай склад")){
                 statusEmoji = "🇨🇳 На складе в Китае";
             }
+
+            // 🚚 В пути
             else if(statusRaw.includes("в пути")){
-                statusEmoji = "🚚 В пути";
+                statusEmoji = "📍 В пути";
             }
+
+            // 🏢 Офис
             else if(statusRaw.includes("офис")){
                 statusEmoji = "🏢 В офисе";
             }
+
+            // ✅ Выдано
             else if(statusRaw.includes("выдано")){
                 statusEmoji = "✅ Выдано";
             }
 
-            const sendDate = formatDate(getValue(p, ["date", "Date", "send_date", "sendDate"]));
-
-            const expectedDate = formatDate(getValue(p, [
-                "expected_date",
-                "expectedDate",
-                "EXPECTED_DATE",
-                "planned_date"
-            ]));
+            const sendDate = formatDate(p.date);
+            const expectedDate = formatDate(p.expected_date);
 
             html += `
             <div class="card">
