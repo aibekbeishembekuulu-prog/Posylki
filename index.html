@@ -59,6 +59,9 @@ button {
     font-weight: bold;
     border: none;
     cursor: pointer;
+}
+
+.button-red {
     background-color: #d9534f;
     color: white;
 }
@@ -107,13 +110,13 @@ button {
 
 <div class="box">
 
-<img src="logo.jpg.jpg" class="logo">
+<img src="logo.jpg.jpg" alt="Tez Kargo" class="logo">
 
 <h2>📦 Tez Kargo — Отслеживание посылок</h2>
 
 <input id="client" placeholder="Введите клиентский код">
 
-<button onclick="search()">
+<button class="button-red" onclick="search()">
 🔍 Показать мои посылки
 </button>
 
@@ -125,34 +128,6 @@ button {
 <script>
 
 const url = "https://script.google.com/macros/s/AKfycbyWxhTjr99IKcHubVsLSlRYIy8EGNvS4TMpn4meNCS1oeaxzzYi1Csyo3Mli8fwwawO/exec";
-
-// 📅 формат даты DD.MM.YYYY → DD.MM.YYYY
-function formatDate(dateStr){
-    function formatDate(dateStr){
-
-if(!dateStr || dateStr === "-") return "-";
-
-dateStr = String(dateStr).trim();
-
-// Формат 11-06-2026
-if(/^\d{2}-\d{2}-\d{4}$/.test(dateStr)){
-    return dateStr.replace(/-/g, ".");
-}
-
-// Формат 11.06.2026
-if(/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)){
-    return dateStr;
-}
-
-// Формат 2026-06-11
-if(/^\d{4}-\d{2}-\d{2}$/.test(dateStr)){
-    const [year, month, day] = dateStr.split("-");
-    return `${day}.${month}.${year}`;
-}
-
-return dateStr;
-
-}
 
 async function search(){
 
@@ -176,7 +151,9 @@ async function search(){
     let html = "";
 
     if(!data || data.length === 0){
+
         html = "<p>❌ Посылок не найдено</p>";
+
     } else {
 
         html += `
@@ -186,38 +163,43 @@ async function search(){
 
         data.forEach(p => {
 
-            const statusRaw = (p.status || "").toLowerCase();
-
             let statusEmoji = "⚠️ Неизвестно";
+            const status = (p.status || "").toLowerCase();
 
-            // 🇨🇳 Китай (ВАЖНО: ставим первым)
-            if(statusRaw.includes("склад китай") || statusRaw.includes("китай склад")){
+            // 🇨🇳 На складе Китай
+            if(
+                status.includes("склад китай") ||
+                status.includes("на складе китай")
+            ){
                 statusEmoji = "🇨🇳 На складе в Китае";
             }
 
             // 🚚 В пути
-            else if(statusRaw.includes("в пути")){
+            else if(
+                status.includes("в пути") ||
+                status.includes("китай")
+            ){
                 statusEmoji = "📍 В пути";
             }
 
-            // 🏢 Офис
-            else if(statusRaw.includes("офис")){
-                statusEmoji = "🏢 В офисе";
-            }
-
             // ✅ Выдано
-            else if(statusRaw.includes("выдано")){
+            else if(status.includes("выдано")){
                 statusEmoji = "✅ Выдано";
             }
 
-            const sendDate = formatDate(p.date);
-            const expectedDate = formatDate(p.expected_date);
+            // 🏢 В офисе
+            else if(status.includes("офис")){
+                statusEmoji = "🏢 В офисе";
+            }
+
+            const sendDate = p.date || "-";
+            const expectedDate = p.expected_date || "-";
 
             html += `
             <div class="card">
 
                 <div class="track">
-                    🆔 Трек-код: ${p.track || "-"}
+                    🆔 Трек-код: ${p.track}
                 </div>
 
                 <div class="status">
